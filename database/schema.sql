@@ -1,0 +1,69 @@
+CREATE DATABASE IF NOT EXISTS sistem_kasir_koperasi
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE sistem_kasir_koperasi;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  username VARCHAR(100) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('admin','kasir') NOT NULL DEFAULT 'kasir',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  product_code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(150) NOT NULL,
+  category_id INT UNSIGNED NULL,
+  price DECIMAL(15,2) NOT NULL DEFAULT 0,
+  stock INT UNSIGNED NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS members (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  member_code VARCHAR(30) NOT NULL UNIQUE,
+  name VARCHAR(120) NOT NULL,
+  phone VARCHAR(30) NULL,
+  address TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  invoice_number VARCHAR(40) NOT NULL UNIQUE,
+  user_id INT UNSIGNED NOT NULL,
+  member_id INT UNSIGNED NULL,
+  subtotal DECIMAL(15,2) NOT NULL DEFAULT 0,
+  discount DECIMAL(15,2) NOT NULL DEFAULT 0,
+  total DECIMAL(15,2) NOT NULL DEFAULT 0,
+  paid_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+  change_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_transactions_user FOREIGN KEY (user_id) REFERENCES users(id),
+  CONSTRAINT fk_transactions_member FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS transaction_items (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  transaction_id BIGINT UNSIGNED NOT NULL,
+  product_id INT UNSIGNED NOT NULL,
+  quantity INT UNSIGNED NOT NULL,
+  price DECIMAL(15,2) NOT NULL,
+  line_total DECIMAL(15,2) NOT NULL,
+  CONSTRAINT fk_items_transaction FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_items_product FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+INSERT IGNORE INTO categories (name) VALUES ('Sembako'), ('Alat Tulis'), ('Minuman');
+INSERT IGNORE INTO products (product_code, name, category_id, price, stock) VALUES
+('BRG001', 'Buku Tulis', 2, 5000, 25),
+('BRG002', 'Air Mineral', 3, 3000, 40),
+('BRG003', 'Beras 1 Kg', 1, 15000, 15);
